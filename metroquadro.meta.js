@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MetroQuadro
 // @namespace    https://github.com/asia-volta/metroquadro-userscript
-// @version      0.2.0
+// @version      0.2.1
 // @description  Ordina gli annunci caricati su Idealista e Immobiliare.it per prezzo al metro quadro.
 // @homepageURL  https://github.com/asia-volta/metroquadro-userscript
 // @supportURL   https://github.com/asia-volta/metroquadro-userscript/issues

@@ -1,6 +1,6 @@
 # MetroQuadro
 
-Versione **0.2.0**. Ordina gli annunci caricati su Idealista e Immobiliare.it per €/m².
+Versione **0.2.1**. Ordina gli annunci caricati su Idealista e Immobiliare.it per €/m².
 
 ## Installa una volta
 

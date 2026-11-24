@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MetroQuadro
 // @namespace    https://github.com/asia-volta/metroquadro-userscript
-// @version      0.2.0
+// @version      0.2.1
 // @description  Ordina gli annunci caricati su Idealista e Immobiliare.it per prezzo al metro quadro.
 // @homepageURL  https://github.com/asia-volta/metroquadro-userscript
 // @supportURL   https://github.com/asia-volta/metroquadro-userscript/issues
@@ -167,6 +167,7 @@ GM_addStyle("[data-mq-badge] {\n  display: inline-flex !important;\n  align-item
   function scan(doc, hostname) {
     const config = configs[hostname];
     if (!config) return { config: null, groups: [] };
+    const searchView = /^\/(?:vendita-|affitto-|aste-|ricerca(?:\/|$)|search-list(?:\/|$))/.test(doc.location.pathname);
     // Detail pages may have recommendation cards: do not reorder those.
     if (/^\/(?:immobile|annunci)\/\d+/.test(doc.location.pathname)) return { config, groups: [] };
     const structured = hostname === "www.immobiliare.it" ? structuredListings(doc) : new Map();
@@ -179,7 +180,7 @@ GM_addStyle("[data-mq-badge] {\n  display: inline-flex !important;\n  align-item
       if (!groups.has(parent)) groups.set(parent, []);
       groups.get(parent).push({ card, ...extract(card, config, structured) });
     }
-    return { config, groups: [...groups].map(([parent, items]) => ({ parent, items })) };
+    return { config, searchView, groups: [...groups].map(([parent, items]) => ({ parent, items })) };
   }
 
   globalThis.MetroQuadroAdapters = Object.freeze({ scan, cleanText, structuredListings });
@@ -291,17 +292,22 @@ globalThis.MetroQuadroStorage = Object.freeze({
         sortedParents = new WeakSet();
         nextIndex = 0;
       }
-      const { config, groups } = scan(document, location.hostname);
+      const { config, groups, searchView } = scan(document, location.hostname);
       const items = groups.flatMap((group) => group.items);
-      if (!items.length) {
-        if (host) {
-          root.querySelector(".status").textContent = "Nessun annuncio riconosciuto in questa vista.";
-          host.hidden = true;
-        }
+      if (!items.length && !searchView) {
+        if (host) host.hidden = true;
         return;
       }
       if (!host?.isConnected) mount();
       host.hidden = false;
+      root.getElementById("order").disabled = !items.length;
+      if (!items.length) {
+        root.querySelector(".status").textContent = "MetroQuadro è attivo, ma non riconosce annunci in questa vista.";
+        root.querySelector(".scope").textContent = "Apri i risultati in vista elenco. Se gli annunci sono già visibili, il layout potrebbe non essere supportato. Puoi riprovare con Ricalcola.";
+        root.querySelector(".native").hidden = true;
+        return;
+      }
+      root.querySelector(".scope").textContent = "Solo questa pagina. I nuovi annunci caricati vengono riordinati. Prezzo o superficie mancanti: in fondo.";
       // Track the site's latest order until we actually start moving its cards.
       for (const { parent, items: groupItems } of groups) {
         if (!sortedParents.has(parent)) {
